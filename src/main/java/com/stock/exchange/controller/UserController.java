@@ -1,7 +1,6 @@
 package com.stock.exchange.controller;
 
 import com.stock.exchange.domain.user.User;
-import com.stock.exchange.exception.UserNotFoundException;
 import com.stock.exchange.service.UserService;
 import com.stock.exchange.util.ApiResponseHelper;
 import io.swagger.annotations.Api;
@@ -32,14 +31,11 @@ public class UserController {
 
     @GetMapping("/users/{username}")
     @ApiOperation(value = "Get User By Username", authorizations = {@Authorization(value = "apiKey")})
-    public ResponseEntity<Object> retrieveUser(@PathVariable String username) throws UserNotFoundException {
-        User retrievedUser;
+    public ResponseEntity<Object> retrieveUser(@PathVariable String username) {
+        User retrievedUser = userService.getUser(username);
 
-        try {
-            retrievedUser = userService.getUser(username);
-        } catch (UserNotFoundException ex) {
-            return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND,
-                    "User could not be retrieved : " + ex.getMessage());
+        if (retrievedUser == null) {
+            return getUserNotFoundResponse();
         }
 
         return ApiResponseHelper.getResponseEntity(HttpStatus.OK, "Retrieved User", retrievedUser);
@@ -50,28 +46,40 @@ public class UserController {
     public ResponseEntity<Object> createUser(@RequestBody User user) {
         User createdUser = userService.createUser(user);
 
+        if (createdUser == null) {
+            return getUserAlreadyExistsResponse();
+        }
+
         return ApiResponseHelper.getResponseEntity(HttpStatus.CREATED, "Created User", createdUser);
     }
 
-    @DeleteMapping("/users/{code}")
+    @DeleteMapping("/users/{username}")
     @ApiOperation(value = "Delete User", authorizations = {@Authorization(value = "apiKey")})
-    public ResponseEntity<Object> deleteUser(@PathVariable Long id) {
-        User deletedUser = userService.deleteUser(id);
+    public ResponseEntity<Object> deleteUser(@PathVariable String username) {
+        User deletedUser = userService.deleteUser(username);
 
         if (deletedUser == null)
-            return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND, "User with the given id does not exist");
+            return getUserNotFoundResponse();
 
         return ApiResponseHelper.getResponseEntity(HttpStatus.NO_CONTENT, "Deleted User");
     }
 
-    @PutMapping("/users/{code}")
+    @PutMapping("/users/{username}")
     @ApiOperation(value = "Update User", authorizations = {@Authorization(value = "apiKey")})
-    public ResponseEntity<Object> updateUser(@RequestBody User user, @PathVariable Long id) {
-        User updatedUser = userService.updateUser(user, id);
+    public ResponseEntity<Object> updateUser(@RequestBody User user, @PathVariable String username) {
+        User updatedUser = userService.updateUser(user, username);
 
         if (updatedUser == null)
-            return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND, "User with the given code does not exist");
+            return getUserNotFoundResponse();
 
         return ApiResponseHelper.getResponseEntity(HttpStatus.NO_CONTENT, "Updated User");
+    }
+
+    private ResponseEntity<Object> getUserNotFoundResponse() {
+        return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND, "User with the given username does not exist");
+    }
+
+    private ResponseEntity<Object> getUserAlreadyExistsResponse() {
+        return ApiResponseHelper.getResponseEntity(HttpStatus.UNPROCESSABLE_ENTITY, "User with the given username already exists.");
     }
 }

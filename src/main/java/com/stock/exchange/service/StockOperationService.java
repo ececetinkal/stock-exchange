@@ -1,7 +1,7 @@
 package com.stock.exchange.service;
 
+import com.stock.exchange.domain.stock.StockWithPrice;
 import com.stock.exchange.domain.stockoperation.StockOperation;
-import com.stock.exchange.exception.StockNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,14 +12,20 @@ public class StockOperationService {
     @Autowired
     StockService stockService;
 
-    public StockOperation doStockOperation(@RequestBody StockOperation stockOperation) throws StockNotFoundException {
-        Double unitPrice = stockService.getStock(stockOperation.getStockCode()).getPrice();
-        Double total = calculateTotalAmount(stockOperation, unitPrice);
+    public StockOperation doStockOperation(@RequestBody StockOperation stockOperation) {
+        StockWithPrice stock = stockService.getStock(stockOperation.getStockCode());
 
-        stockOperation.setTotal(total);
-        stockOperation.setUnitPrice(unitPrice);
+        if (stock == null) {
+            return null;
+        } else {
+            Double unitPrice = stock.getPrice();
+            Double total = calculateTotalAmount(stockOperation, unitPrice);
 
-        return stockOperation;
+            stockOperation.setTotal(total);
+            stockOperation.setUnitPrice(unitPrice);
+
+            return stockOperation;
+        }
     }
 
     private double calculateTotalAmount(StockOperation stockOperation, Double unitPrice) {

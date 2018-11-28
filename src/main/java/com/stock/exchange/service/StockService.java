@@ -2,7 +2,6 @@ package com.stock.exchange.service;
 
 import com.stock.exchange.domain.stock.Stock;
 import com.stock.exchange.domain.stock.StockWithPrice;
-import com.stock.exchange.exception.StockNotFoundException;
 import com.stock.exchange.repository.StockRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,16 +22,22 @@ public class StockService {
         return stocks.stream().map(s -> s.getStockWithPrice()).collect(Collectors.toList());
     }
 
-    public StockWithPrice getStock(String code) throws StockNotFoundException {
+    public StockWithPrice getStock(String code) {
         Optional<Stock> stock = stockRepository.findById(code);
 
         if (!stock.isPresent())
-            throw new StockNotFoundException("Code: " + code);
+            return null;
 
         return stock.get().getStockWithPrice();
     }
 
     public Stock createStock(Stock stock) {
+        Optional<Stock> stockOptional = stockRepository.findById(stock.getCode());
+
+        if(stockOptional.isPresent()){
+            return null;
+        }
+
         return stockRepository.save(stock);
     }
 

@@ -2,7 +2,6 @@ package com.stock.exchange.controller;
 
 import com.stock.exchange.domain.stock.Stock;
 import com.stock.exchange.domain.stock.StockWithPrice;
-import com.stock.exchange.exception.StockNotFoundException;
 import com.stock.exchange.service.StockService;
 import com.stock.exchange.util.ApiResponseHelper;
 import io.swagger.annotations.Api;
@@ -35,13 +34,10 @@ public class StockController {
     @ApiOperation(value = "Get Stock By Code", authorizations = {@Authorization(value = "apiKey")})
     @PreAuthorize("hasAuthority('ADMIN_USER') or hasAuthority('STANDARD_USER')")
     public ResponseEntity<Object> retrieveStock(@PathVariable String code) {
-        StockWithPrice retrievedStock;
+        StockWithPrice retrievedStock = stockService.getStock(code);
 
-        try {
-            retrievedStock = stockService.getStock(code);
-        } catch (StockNotFoundException ex) {
-            return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND,
-                    "Stock could not be retrieved : " + ex.getMessage());
+        if(retrievedStock == null){
+            return getStockNotFoundResponse();
         }
 
         return ApiResponseHelper.getResponseEntity(HttpStatus.OK, "Retrieved Stock", retrievedStock);
@@ -53,6 +49,10 @@ public class StockController {
     public ResponseEntity<Object> createStock(@RequestBody Stock stock) {
         Stock createdStock = stockService.createStock(stock);
 
+        if(createdStock == null){
+            return getStockAlreadyExistsResponse();
+        }
+
         return ApiResponseHelper.getResponseEntity(HttpStatus.CREATED, "Created Stock", createdStock);
     }
 
@@ -63,7 +63,7 @@ public class StockController {
         Stock deletedStock = stockService.deleteStock(code);
 
         if (deletedStock == null)
-            return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND, "Stock with the given code does not exist");
+            return getStockNotFoundResponse();
 
         return ApiResponseHelper.getResponseEntity(HttpStatus.NO_CONTENT, "Deleted Stock");
     }
@@ -75,8 +75,17 @@ public class StockController {
         Stock updatedStock = stockService.updateStock(stock, code);
 
         if (updatedStock == null)
-            return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND, "Stock with the given code does not exist");
+            return getStockNotFoundResponse();
 
         return ApiResponseHelper.getResponseEntity(HttpStatus.NO_CONTENT, "Updated Stock");
+    }
+
+
+    private ResponseEntity<Object> getStockNotFoundResponse(){
+        return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND, "Stock with the given code does not exist");
+    }
+
+    private ResponseEntity<Object> getStockAlreadyExistsResponse(){
+        return ApiResponseHelper.getResponseEntity(HttpStatus.UNPROCESSABLE_ENTITY, "Stock with the given code already exists.");
     }
 }

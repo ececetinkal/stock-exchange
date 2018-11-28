@@ -2,7 +2,6 @@ package com.stock.exchange.controller;
 
 import com.stock.exchange.domain.stockoperation.OperationType;
 import com.stock.exchange.domain.stockoperation.StockOperation;
-import com.stock.exchange.exception.StockNotFoundException;
 import com.stock.exchange.service.StockOperationService;
 import com.stock.exchange.util.ApiResponseHelper;
 import io.swagger.annotations.Api;
@@ -31,15 +30,12 @@ public class StockOperationController {
     @ApiOperation(value = "Buy Stock", authorizations = {@Authorization(value = "apiKey")})
     public ResponseEntity<Object> buyStock(@RequestBody StockOperation stockOperation) {
         stockOperation.setOperationType(OperationType.buy);
-        StockOperation resultOperation = null;
+        StockOperation resultOperation = stockOperationService.doStockOperation(stockOperation);
 
-        try {
-            resultOperation = stockOperationService.doStockOperation(stockOperation);
-        } catch (StockNotFoundException ex) {
+        if(resultOperation == null){
             return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND,
-                    "Failed buy operation. Stock does not exist " + ex.getMessage());
+                    "Failed buy operation. Stock does not exist. ");
         }
-
 
         return ApiResponseHelper.getResponseEntity(HttpStatus.OK, "Bought Stock", resultOperation);
     }
@@ -48,13 +44,11 @@ public class StockOperationController {
     @ApiOperation(value = "Sell Stock", authorizations = {@Authorization(value = "apiKey")})
     public ResponseEntity<Object> sellStock(@RequestBody StockOperation stockOperation)  {
         stockOperation.setOperationType(OperationType.sell);
-        StockOperation resultOperation = null;
+        StockOperation resultOperation = stockOperationService.doStockOperation(stockOperation);
 
-        try {
-            resultOperation = stockOperationService.doStockOperation(stockOperation);
-        } catch (StockNotFoundException ex) {
+        if(resultOperation == null){
             return ApiResponseHelper.getResponseEntity(HttpStatus.NOT_FOUND,
-                    "Failed sell operation. Stock does not exist: " + ex.getMessage());
+                    "Failed sell operation. Stock does not exist. ");
         }
 
         return ApiResponseHelper.getResponseEntity(HttpStatus.OK, "Sold Stock", resultOperation);
