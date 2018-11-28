@@ -67,6 +67,6 @@ You can execute this maven command: 'mvn spring-boot:run'.
         ]
         `
         
-        2. You can user Swagger UI:
+        2. You can use Swagger UI:
         `http://localhost:8080/swagger-ui.html`
 
